@@ -11,8 +11,8 @@ import java.util.Random;
 @RestController
 public class ServiceController {
 
-//  static final List<String> adjectives = Arrays.asList("spicy", "sweet", "salty", "oily", "crunchy", "bitter", "rotten");
-//  static final List<String> nouns = Arrays.asList("pepper", "banana", "apple", "orange", "peach", "egg");
+//static final List<String> adjectives = Arrays.asList("spicy", "sweet", "salty", "oily", "crunchy", "bitter", "rotten");
+//static final List<String> nouns = Arrays.asList("pepper", "banana", "apple", "orange", "peach", "egg");
   @Value("${adjectives}")
   List<String> adjectives;
 
