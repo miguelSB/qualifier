@@ -1,0 +1,65 @@
+pipeline {
+    agent none
+    triggers { pollSCM("* * * * *") }
+    
+    stages {
+        stage("Preparation") {
+            agent any
+            steps {
+                git poll: true, url: "https://github.com/miguelSB/qualifier.git"
+                sh "echo 'Preparation Complete'"
+            }
+        }
+        
+        stage("Build") {
+            agent {
+                docker { image 'maven:3-alpine' }
+            }
+            steps {
+                sh "mvn clean package"
+                sh "echo 'Preparation Build'"
+            }
+            post {
+                always {
+                    junit "target/surefire-reports/*.xml"
+                }
+            }
+        }
+        
+        stage("Package") {
+            agent any
+            steps {
+                sh "rm -f *.tar"
+                sh "docker build -t miguel/qualifier ."
+                sh "docker save -o miguel_qualifier.tar miguel/qualifier"
+                archiveArtifacts artifacts: '**/*.tar'
+                
+                sh "echo 'Preparation Package'"
+            }
+            
+        }
+        
+        stage("Install") {
+            agent any
+            steps {
+                sshagent(credentials: ['studen']) {
+                    sh "scp -o StrictHostKeyChecking=no miguel_qualifier.tar studen@45.33.50.232:~/."
+                    sh """
+                        ssh -o StrictHostKeyChecking=no studen@45.33.50.232 \
+                        docker rm -f miguel_qualifier || true
+                    """
+                    sh """
+                        ssh -o StrictHostKeyChecking=no studen@45.33.50.232 \
+                        docker import miguel_qualifier.tar
+                    """
+                    sh """
+                        ssh -o StrictHostKeyChecking=no studen@45.33.50.232 \
+                        docker run -d -p 10700:8080 --name miguel_qualifier miguel/qualifier
+                    """
+                    sh "echo 'Preparation Install'"
+                }
+            }
+            
+        }
+    }
+}
